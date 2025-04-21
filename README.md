@@ -1,7 +1,7 @@
 # DX11_Study
 DirectX11 실습을 위한 리포지토리입니다.
 <p align="center">
-  <img src = "https://github.com/user-attachments/assets/7db7d113-62cb-46ce-8ef7-bab5ff21093c" style="width: 50%;"><br>       
+  <img src = "https://github.com/user-attachments/assets/a74ff0ec-e1f5-419e-8add-5e759c4c4d1a" style="width: 50%;"><br>       
 </p>
 
 ## 실습 내용
