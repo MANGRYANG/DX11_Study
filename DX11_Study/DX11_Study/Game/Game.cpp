@@ -11,6 +11,12 @@ Game::Game()
 
 	// 스왑 체인 초기화
 	m_pSwapChain = nullptr;
+
+	// 렌더 타겟 뷰 초기화
+	m_pRenderTargetView = nullptr;
+
+	// 백 버퍼 초기화
+	m_pBackBuffer = nullptr;
 }
 Game::~Game()
 {
@@ -37,7 +43,17 @@ bool Game::InitD3D(HWND hWnd)
 		D3D11_SDK_VERSION, &sd, &m_pSwapChain, &m_pd3dDevice, nullptr, &m_pImmediateContext
 	);
 
-	return SUCCEEDED(hr);   // 성공 여부 반환
+	if (SUCCEEDED(hr) && m_pd3dDevice != nullptr && m_pImmediateContext != nullptr && m_pSwapChain != nullptr)
+	{
+		return true; // 성공적으로 초기화됨
+	}
+	else
+	{
+		// 예외 처리
+		OutputDebugString(L"Direct3D 초기화에 실패했습니다.\n");
+		Game::CleanupD3D(); // 초기화 실패 시 정리
+		return false; // 초기화 실패
+	}
 }
 
 // Direct3D 정리 함수
@@ -66,52 +82,97 @@ void Game::CleanupD3D()
 // Render 코드  
 void Game::Render()
 {
-	// 스왑 체인에서 렌더 타겟 버퍼(백 버퍼) 가져오기  
-	ID3D11Texture2D* pBackBuffer = nullptr;
-	HRESULT hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	// 백 버퍼 가져오기
+	if (!Game::GetBackBuffer())
+	{
+		Game::CleanupD3D();
+		return;
+	}
 
-	if (FAILED(hr) || pBackBuffer == nullptr)
+	// 렌더 타겟 뷰 생성
+	if (!Game::CreateRenderTargetView())
+	{
+		Game::CleanupD3D();
+		return;
+	}
+	
+	Game::SetRenderTarget(); // 렌더 타겟 설정
+	
+	Game::SetViewport(); // 뷰포트 설정
+
+	Game::SetBackgroundColor(1, 1, 1, 1); // 배경색 설정
+
+	// 렌더 타겟 뷰는 렌더 타겟 버퍼에 의존하여 생성되므로, 렌더 타겟 뷰를 먼저 해제해야 함
+	SAFE_RELEASE(m_pRenderTargetView); // 렌더 타겟 뷰 해제
+	SAFE_RELEASE(m_pBackBuffer); // 백 버퍼 해제
+	 
+	Game::BufferSwap(); // 버퍼 스왑
+}
+
+bool Game::GetBackBuffer()
+{
+	// 스왑 체인에서 렌더 타겟 버퍼(백 버퍼) 가져오기
+	HRESULT hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_pBackBuffer);
+
+	if (FAILED(hr) || m_pBackBuffer == nullptr)
 	{
 		// 예외 처리
 		OutputDebugString(L"스왑 체인에서 백 버퍼를 가져오지 못했습니다.\n");
-		return;
+		SAFE_RELEASE(m_pBackBuffer);
+		return false;
 	}
 
-	// 렌더 타겟 뷰 생성  
-	ID3D11RenderTargetView* pRenderTargetView = nullptr;
-	hr = m_pd3dDevice->
-		CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
+	return true;
+}
 
-	if (FAILED(hr) || pRenderTargetView == nullptr)
+bool Game::CreateRenderTargetView()
+{
+	// 렌더 타겟 뷰 생성
+	HRESULT hr = m_pd3dDevice->CreateRenderTargetView(m_pBackBuffer, nullptr, &m_pRenderTargetView);
+
+	if (FAILED(hr) || m_pRenderTargetView == nullptr)
 	{
 		// 예외 처리 
 		OutputDebugString(L"렌더 타겟 뷰를 생성하지 못했습니다.\n");
-		pBackBuffer->Release();
-		return;
+		SAFE_RELEASE(m_pRenderTargetView);
+		return false;
 	}
 
-	// 렌더 타겟 뷰를 출력 대상으로 설정
-	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+	return true;
+}
 
+// 렌더 타겟을 설정하는 함수
+void Game::SetRenderTarget()
+{
+	// 렌더 타겟 뷰 설정
+	m_pImmediateContext->OMSetRenderTargets(1, &m_pRenderTargetView, nullptr);
+}
+
+// 뷰 포트 설정 함수
+void Game::SetViewport()
+{
 	// 뷰 포트 설정
 	D3D11_VIEWPORT viewport = {};
-	viewport.Width = SCREEN_WIDTH; // 뷰포트 너비
-	viewport.Height = SCREEN_HEIGHT; // 뷰포트 높이
+	viewport.Width = static_cast<FLOAT>(SCREEN_WIDTH); // 뷰포트 너비
+	viewport.Height = static_cast<FLOAT>(SCREEN_HEIGHT); // 뷰포트 높이
 	viewport.MinDepth = 0.0f; // 최소 깊이
 	viewport.MaxDepth = 1.0f; // 최대 깊이
 	viewport.TopLeftX = 0; // 뷰포트 시작 X 좌표
 	viewport.TopLeftY = 0; // 뷰포트 시작 Y 좌표
 
-    m_pImmediateContext->RSSetViewports(1, &viewport);
+	m_pImmediateContext->RSSetViewports(1, &viewport);
+}
 
+// 배경색을 설정하는 함수
+void Game::SetBackgroundColor(float r, float g, float b, float a)
+{
 	// 렌더 타겟을 지정한 색으로 초기화
-	const float clearColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 흰색 배경  
-	m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, clearColor);
+	const float clearColor[4] = { r, g, b, a };
+	m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView, clearColor);
+}
 
-    // 렌더 타겟 뷰 해제  
-    pRenderTargetView->Release();  
-    pBackBuffer->Release();  
-	 
-	// 버퍼 스왑으로 화면에 출력 
-	m_pSwapChain->Present(1, 0);
-} 
+void Game::BufferSwap()
+{
+	// 스왑 체인 버퍼 스왑
+	m_pSwapChain->Present(0, 0);
+}
