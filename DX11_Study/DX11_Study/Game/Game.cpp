@@ -63,8 +63,55 @@ void Game::CleanupD3D()
 	}
 }
 
+// Render ÄÚµå  
 void Game::Render()
 {
-	// Render ÄÚµå
-	
-}
+	// ½º¿Ò Ã¼ÀÎ¿¡¼­ ·»´õ Å¸°Ù ¹öÆÛ(¹é ¹öÆÛ) °¡Á®¿À±â  
+	ID3D11Texture2D* pBackBuffer = nullptr;
+	HRESULT hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+
+	if (FAILED(hr) || pBackBuffer == nullptr)
+	{
+		// ¿¹¿Ü Ã³¸®
+		OutputDebugString(L"½º¿Ò Ã¼ÀÎ¿¡¼­ ¹é ¹öÆÛ¸¦ °¡Á®¿ÀÁö ¸øÇß½À´Ï´Ù.\n");
+		return;
+	}
+
+	// ·»´õ Å¸°Ù ºä »ı¼º  
+	ID3D11RenderTargetView* pRenderTargetView = nullptr;
+	hr = m_pd3dDevice->
+		CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
+
+	if (FAILED(hr) || pRenderTargetView == nullptr)
+	{
+		// ¿¹¿Ü Ã³¸® 
+		OutputDebugString(L"·»´õ Å¸°Ù ºä¸¦ »ı¼ºÇÏÁö ¸øÇß½À´Ï´Ù.\n");
+		pBackBuffer->Release();
+		return;
+	}
+
+	// ·»´õ Å¸°Ù ºä¸¦ Ãâ·Â ´ë»óÀ¸·Î ¼³Á¤
+	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+
+	// ºä Æ÷Æ® ¼³Á¤
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = SCREEN_WIDTH; // ºäÆ÷Æ® ³Êºñ
+	viewport.Height = SCREEN_HEIGHT; // ºäÆ÷Æ® ³ôÀÌ
+	viewport.MinDepth = 0.0f; // ÃÖ¼Ò ±íÀÌ
+	viewport.MaxDepth = 1.0f; // ÃÖ´ë ±íÀÌ
+	viewport.TopLeftX = 0; // ºäÆ÷Æ® ½ÃÀÛ X ÁÂÇ¥
+	viewport.TopLeftY = 0; // ºäÆ÷Æ® ½ÃÀÛ Y ÁÂÇ¥
+
+    m_pImmediateContext->RSSetViewports(1, &viewport);
+
+	// ·»´õ Å¸°ÙÀ» ÁöÁ¤ÇÑ »öÀ¸·Î ÃÊ±âÈ­
+	const float clearColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f }; // Èò»ö ¹è°æ  
+	m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, clearColor);
+
+    // ·»´õ Å¸°Ù ºä ÇØÁ¦  
+    pRenderTargetView->Release();  
+    pBackBuffer->Release();  
+	 
+	// ¹öÆÛ ½º¿ÒÀ¸·Î È­¸é¿¡ Ãâ·Â 
+	m_pSwapChain->Present(1, 0);
+} 
