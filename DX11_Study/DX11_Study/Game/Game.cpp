@@ -39,19 +39,9 @@ bool Game::InitD3D(HWND hWnd)
 	}
 
 	// ¹é ¹öÆÛ °¡Á®¿À±â
-	if (!GetBackBuffer())
-	{
-		OutputDebugString(L"¹é ¹öÆÛ È¹µæ ½ÇÆÐ.\n");
-		return false;
-	}
-
+	GetBackBuffer();
 	// ·»´õ Å¸°Ù ºä »ý¼º
-	if (!CreateRenderTargetView())
-	{
-		OutputDebugString(L"·»´õ Å¸°Ù ºä »ý¼º ½ÇÆÐ.\n");
-		return false;
-	}
-
+	CreateRenderTargetView();
 	// ºäÆ÷Æ® ¼³Á¤
 	SetViewport();
 
