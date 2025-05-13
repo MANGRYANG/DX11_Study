@@ -15,7 +15,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, message, wParam, lParam);    // 기본 윈도우 프로시저 호출
 }
 
-// 메인 함수
+// 메인 함수  
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
 {
     // 윈도우 클래스 정의
@@ -51,8 +51,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
             g_game.Render();
         }
     }
-
-    g_game.CleanupD3D(); // Direct3D 정리
 
     // 윈도우 클래스 등록 해제
     UnregisterClassW(L"DX11WindowClass", hInstance);
