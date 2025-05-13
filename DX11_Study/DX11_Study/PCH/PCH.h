@@ -13,5 +13,8 @@
 #include <DirectXMath.h>
 #include <wrl.h>
 
+// STL
+#include <vector>
+
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")

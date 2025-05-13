@@ -20,7 +20,9 @@ private:
 
 private:
 	const float clearColor[4] = { 1, 1, 1, 1 };
-	
+	std::vector<Vertex> m_vertices;
+	std::vector<UINT> m_indices;
+
 public:
 	// 생성자와 소멸자
 	Game();
@@ -41,4 +43,8 @@ public:
 	bool CreateRenderTargetView();
 	// 뷰 포트 관련 값들을 설정하는 함수
 	void SetViewport();
+
+public:
+	// 삼각형 생성 함수
+	void CreateGeometry();
 };

@@ -24,37 +24,47 @@ bool Game::InitD3D(HWND hWnd)
 
 	HRESULT hr = D3D11CreateDeviceAndSwapChain( //  Direct3D 디바이스와 스왑 체인 생성
 		nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0,
-		D3D11_SDK_VERSION, &sd, m_pSwapChain.GetAddressOf(), m_pd3dDevice.GetAddressOf(), nullptr, m_pImmediateContext.GetAddressOf()
+		D3D11_SDK_VERSION, 
+		&sd, 
+		m_pSwapChain.GetAddressOf(), 
+		m_pd3dDevice.GetAddressOf(), 
+		nullptr, 
+		m_pImmediateContext.GetAddressOf()
 	);
 
-	if (SUCCEEDED(hr) && m_pd3dDevice != nullptr && m_pImmediateContext != nullptr && m_pSwapChain != nullptr)
+	if (FAILED(hr) || !m_pd3dDevice || !m_pImmediateContext || !m_pSwapChain)
 	{
-		return true; // 성공적으로 초기화됨
-	}
-	else
-	{
-		// 예외 처리
 		OutputDebugString(L"Direct3D 초기화에 실패했습니다.\n");
-		return false; // 초기화 실패
+		return false;
 	}
+
+	// 백 버퍼 가져오기
+	if (!GetBackBuffer())
+	{
+		OutputDebugString(L"백 버퍼 획득 실패.\n");
+		return false;
+	}
+
+	// 렌더 타겟 뷰 생성
+	if (!CreateRenderTargetView())
+	{
+		OutputDebugString(L"렌더 타겟 뷰 생성 실패.\n");
+		return false;
+	}
+
+	// 뷰포트 설정
+	SetViewport();
+
+	return true;
 }
 
 // Render 코드  
 void Game::Render()
 {
-	// 백 버퍼 가져오기
-	if (!Game::GetBackBuffer())
-	{
-		return;
-	}
-
-	// 렌더 타겟 뷰 생성
-	if (!Game::CreateRenderTargetView())
-	{
-		return;
-	}
-
 	Game::RenderBegin();
+
+	// VS -> RS -> PS -> OM
+
 	Game::RenderEnd();
 }
 
@@ -111,4 +121,25 @@ void Game::SetViewport()
 	m_viewport.MaxDepth = 1.0f; // 최대 깊이
 	m_viewport.TopLeftX = 0; // 뷰포트 시작 X 좌표
 	m_viewport.TopLeftY = 0; // 뷰포트 시작 Y 좌표
+}
+
+void Game::CreateGeometry()
+{
+	m_vertices.resize(3); // 삼각형을 구성할 세 개의 정점
+
+	// 첫 번째 정점: 위치와 색상 설정
+	m_vertices[0].position = Vec3(-0.5f, -0.5f, 0.f); // 화면 중앙 좌측 하단
+	m_vertices[0].color = Color(1.f, 0.f, 0.f, 1.f); // 빨간색
+
+	// 두 번째 정점: 위치와 색상 설정
+	m_vertices[1].position = Vec3(0.f, 0.5f, 0.f); // 화면 중앙 상단
+	m_vertices[1].color = Color(0.f, 1.f, 0.f, 1.f); // 녹색
+
+	// 세 번째 정점: 위치와 색상 설정
+	m_vertices[2].position = Vec3(0.5f, -0.5f, 0.f); // 화면 중앙 우측 하단
+	m_vertices[2].color = Color(0.f, 0.f, 1.f, 1.f); // 파란색
+
+	// 세 번째 정점: 위치와 색상 설정
+	m_vertices[2].position = Vec3(0.5f, -0.5f, 0.f); // 화면 중앙 우측 하단
+	m_vertices[2].color = Color(0.f, 0.f, 1.f, 1.f); // 파란색
 }
