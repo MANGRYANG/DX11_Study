@@ -20,8 +20,26 @@ private:
 
 private:
 	const float clearColor[4] = { 1, 1, 1, 1 };
+
+private:
+	// 정점 구조체 배열
 	std::vector<Vertex> m_vertices;
+	// 인덱스 배열
 	std::vector<UINT> m_indices;
+	// 정점 버퍼
+	Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexBuffer = nullptr;
+	// 인덱스 버퍼
+	Microsoft::WRL::ComPtr<ID3D11Buffer> m_indexBuffer = nullptr;
+	// 입력 레이아웃
+	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_inputLayout = nullptr;
+	// 셰이더
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> m_vertexShaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> m_pixelShaderBlob = nullptr;
+
+	// 상수 버퍼
+	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantBuffer;
 
 public:
 	// 생성자와 소멸자
@@ -46,5 +64,16 @@ public:
 
 public:
 	// 삼각형 생성 함수
-	void CreateGeometry();
+	bool CreateGeometry();
+	// 입력 레이아웃 생성 함수
+	void CreateInputLayout();
+	// 셰이더 로드 함수
+	bool LoadShader(const std::wstring& path, const std::string& name, const std::string& version, Microsoft::WRL::ComPtr<ID3DBlob>& blob);
+
+	// 셰이더 생성 함수
+	bool CreateVS();
+	bool CreatePS();
+
+	// 상수 버퍼 생성 함수
+	bool CreateConstantBuffer();
 };
